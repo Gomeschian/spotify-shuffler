@@ -97,61 +97,63 @@
           });
         };
 
-        const shufflePlaylist = (playlistId) => {
-          // Fetch the playlist tracks
-          fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-            method: "GET",
-            headers: {
-              Authorization: "Bearer " + accessToken,
-            },
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              const tracks = data.items;
+        const shufflePlaylist = async (playlistId) => {
+          try {
+            const tracks = await getAllPlaylistTracks(playlistId);
+            // Implement Fisher-Yates shuffle algorithm
+            for (let i = tracks.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [tracks[i], tracks[j]] = [tracks[j], tracks[i]];
+            }
 
-              // Implement Fisher-Yates shuffle algorithm
-              for (let i = tracks.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [tracks[i], tracks[j]] = [tracks[j], tracks[i]];
-              }
-
-              // Update the playlist on Spotify with the shuffled tracks
-              updatePlaylist(playlistId, tracks);
-            })
-            .catch((error) => {
-              console.error("Error fetching playlist tracks:", error);
-              showAlert("Error shuffling playlist. Please try again.", "error");
-            });
+            // Update the playlist on Spotify with the shuffled tracks
+            await updatePlaylist(playlistId, tracks);
+            showAlert("Playlist shuffled successfully!", "success");
+          } catch (error) {
+            console.error("Error shuffling playlist:", error);
+            showAlert("Error shuffling playlist. Please try again.", "error");
+          }
         };
 
-        const updatePlaylist = (playlistId, tracks) => {
+        const updatePlaylist = async (playlistId, tracks) => {
           // Get the URIs of the shuffled tracks
           const uris = tracks.map((track) => track.track.uri);
 
           // Replace the existing tracks with the shuffled ones
-          fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-            method: "PUT",
-            headers: {
-              Authorization: "Bearer " + accessToken,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              uris: uris,
-            }),
-          })
-            .then((response) => {
-              if (response.ok) {
-                console.log("Playlist updated successfully!");
-                showAlert("Playlist shuffled successfully!", "success");
-              } else {
-                console.error("Error updating playlist:", response.statusText);
-                showAlert("Error updating playlist. Please try again.", "error");
-              }
-            })
-            .catch((error) => {
-              console.error("Error updating playlist:", error);
-              showAlert("Error updating playlist. Please try again.", "error");
+          await fetch(
+            `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: "Bearer " + accessToken,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                uris: uris,
+              }),
+            }
+          );
+        };
+
+        const getAllPlaylistTracks = async (playlistId) => {
+          let allTracks = [];
+          let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks`;
+
+          while (url) {
+            const response = await fetch(`${url}?limit=100`, {
+              method: "GET",
+              headers: {
+                Authorization: "Bearer " + accessToken,
+              },
             });
+
+            const data = await response.json();
+            allTracks = allTracks.concat(data.items);
+
+            url = data.next; // Set the next URL for the next iteration
+          }
+
+          return allTracks;
         };
 
         const showAlert = (message, type) => {
