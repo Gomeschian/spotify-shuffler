@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spotify Playlist Shuffler</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-gray-100 p-4">
+    <div class="max-w-xl mx-auto">
+      <h1 class="text-3xl font-bold mb-4">Spotify Playlist Shuffler</h1>
+
+      <div id="login-section" class="mb-8">
+        <p class="text-gray-600">Checking authentication...</p>
+      </div>
+
+      <div id="playlists-section" style="display: none">
+        <h2 class="text-xl font-semibold mb-4">Your Playlists</h2>
+        <ul id="playlist-list" class="space-y-2">
+          <!-- Playlists will be displayed here -->
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const clientId = "14d1be042f9746849b214351c89cdda4"; // Replace with your Spotify application client ID
+        const redirectUri = "http://localhost:3000/callback"; // Replace with your redirect URI
+        const scopes =
+          "user-read-private user-read-email playlist-read-private";
+
+        const loginSection = document.getElementById("login-section");
+        const playlistsSection = document.getElementById("playlists-section");
+
+        const isAuthenticated = () => {
+          const params = new URLSearchParams(window.location.hash.substring(1));
+          return params.has("access_token");
+        };
+
+        const redirectToAuthorization = () => {
+          window.location.href = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
+            redirectUri
+          )}&scope=${encodeURIComponent(scopes)}&response_type=token`;
+        };
+
+        if (isAuthenticated()) {
+          showPlaylists();
+        } else {
+          redirectToAuthorization();
+        }
+
+        function showPlaylists() {
+          loginSection.style.display = "none";
+          playlistsSection.style.display = "block";
+
+          // Placeholder for fetching playlists and displaying them
+          const playlists = ["Playlist 1", "Playlist 2", "Playlist 3"]; // Replace with actual playlist data
+
+          const playlistList = document.getElementById("playlist-list");
+          playlists.forEach((playlist) => {
+            const listItem = document.createElement("li");
+            listItem.className =
+              "flex items-center justify-between bg-white p-2 rounded shadow";
+            listItem.innerHTML = `
+                        <span class="text-gray-800">${playlist}</span>
+                        <button class="bg-blue-500 text-white px-3 py-1 rounded">Shuffle</button>
+                    `;
+            playlistList.appendChild(listItem);
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
