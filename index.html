@@ -100,11 +100,15 @@
         const shufflePlaylist = async (playlistId) => {
           try {
             const tracks = await getAllPlaylistTracks(playlistId);
+            console.log("Original Tracks:", tracks);
+
             // Implement Fisher-Yates shuffle algorithm
             for (let i = tracks.length - 1; i > 0; i--) {
               const j = Math.floor(Math.random() * (i + 1));
               [tracks[i], tracks[j]] = [tracks[j], tracks[i]];
             }
+
+            console.log("Shuffled Tracks:", tracks);
 
             // Update the playlist on Spotify with the shuffled tracks
             await updatePlaylist(playlistId, tracks);
