@@ -99,23 +99,24 @@
 
         const shufflePlaylist = async (playlistId) => {
           try {
-            const tracks = await getAllPlaylistTracks(playlistId);
-            console.log("Original Tracks:", tracks);
+            const originalTracks = await getAllPlaylistTracks(playlistId);
+            console.log("Original Tracks:", originalTracks);
 
-            // Implement Fisher-Yates shuffle algorithm
-            for (let i = tracks.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [tracks[i], tracks[j]] = [tracks[j], tracks[i]];
-            }
+            // Shuffle the tracks
+            const shuffledTracks = shuffleArray(originalTracks);
+            console.log("Shuffled Tracks:", shuffledTracks);
 
-            console.log("Shuffled Tracks:", tracks);
+            // Update the Spotify playlist with the shuffled tracks
+            await updatePlaylist(playlistId, shuffledTracks);
 
-            // Update the playlist on Spotify with the shuffled tracks
-            await updatePlaylist(playlistId, tracks);
-            showAlert("Playlist shuffled successfully!", "success");
+            // Fetch and log the updated tracks to verify
+            const updatedTracks = await getAllPlaylistTracks(playlistId);
+            console.log("Updated Tracks:", updatedTracks);
+
+            // Update the local playlist with the shuffled tracks
+            updateLocalPlaylist(shuffledTracks);
           } catch (error) {
             console.error("Error shuffling playlist:", error);
-            showAlert("Error shuffling playlist. Please try again.", "error");
           }
         };
 
