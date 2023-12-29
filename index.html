@@ -50,7 +50,7 @@
           window.location.hash.substring(1)
         ).get("access_token");
 
-        const fetchAllPlaylists = async () => {
+        const fetchPlaylists = async () => {
           if (!accessToken) {
             console.error("Access token not found or invalid.");
             return;
