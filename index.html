@@ -27,8 +27,8 @@
 
     <script>
       document.addEventListener("DOMContentLoaded", function () {
-        const clientId = "14d1be042f9746849b214351c89cdda4"; // Replace with your Spotify application client ID
-        const redirectUri = "https://spotify-shuffler-ashen.vercel.app/"; // Replace with your correct redirect URI
+        const clientId = "YOUR_SPOTIFY_CLIENT_ID";
+        const redirectUri = "YOUR_REDIRECT_URI";
         const scopes =
           "playlist-read-private playlist-modify-public playlist-modify-private";
 
@@ -51,61 +51,76 @@
         ).get("access_token");
 
         const fetchPlaylists = async () => {
-          if (!accessToken) {
-            console.error("Access token not found or invalid.");
-            return;
-          }
-          document.getElementById("login-section").innerText =
-            "Fetching playlists...";
-          let allPlaylists = [];
-          let limit = 50;
-          let offset = 0;
-
-          while (true) {
-            const response = await fetch(
-              `https://api.spotify.com/v1/me/playlists?limit=${limit}&offset=${offset}`,
-              {
-                headers: {
-                  Authorization: "Bearer " + accessToken,
-                },
-              }
-            );
-
-            const data = await response.json();
-            allPlaylists.push(...data.items);
-
-            if (data.next) {
-              offset += limit;
-            } else {
-              break;
+          try {
+            if (!accessToken) {
+              throw new Error("Access token not found or invalid.");
             }
-          }
 
-          displayPlaylists(allPlaylists);
+            document.getElementById("login-section").innerText =
+              "Fetching playlists...";
+            let allPlaylists = [];
+            let limit = 50;
+            let offset = 0;
+
+            while (true) {
+              const response = await fetch(
+                `https://api.spotify.com/v1/me/playlists?limit=${limit}&offset=${offset}`,
+                {
+                  headers: {
+                    Authorization: "Bearer " + accessToken,
+                  },
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error("Failed to fetch playlists.");
+              }
+
+              const data = await response.json();
+              allPlaylists.push(...data.items);
+
+              if (data.next) {
+                offset += limit;
+              } else {
+                break;
+              }
+            }
+
+            displayPlaylists(allPlaylists);
+          } catch (error) {
+            console.error("Error fetching playlists:", error);
+            showAlert("Failed to fetch playlists. Please try again.", "error");
+          }
         };
+
         const displayPlaylists = (playlists) => {
           const playlistList = document.getElementById("playlist-list");
-          playlists.forEach((playlist) => {
-            const listItem = document.createElement("li");
-            listItem.className =
-              "flex items-center justify-between bg-white p-2 rounded shadow";
-            listItem.innerHTML = `
-              <span class="text-gray-800">${playlist.name}</span>
-              <button class="bg-blue-500 text-white px-3 py-1 rounded shuffle-btn" data-id="${playlist.id}">Shuffle Playlist</button>
-            `;
-            playlistList.appendChild(listItem);
-          });
-
-          // Add event listeners to shuffle buttons
-          const shuffleButtons = document.querySelectorAll(".shuffle-btn");
-          shuffleButtons.forEach((button) => {
-            button.addEventListener("click", () => {
-              const playlistId = button.getAttribute("data-id");
-              shufflePlaylist(playlistId);
+          if (playlists.length === 0) {
+            document.getElementById("login-section").innerText =
+              "No playlists found.";
+          } else {
+            playlists.forEach((playlist) => {
+              const listItem = document.createElement("li");
+              listItem.className =
+                "flex items-center justify-between bg-white p-2 rounded shadow";
+              listItem.innerHTML = `
+            <span class="text-gray-800">${playlist.name}</span>
+            <button class="bg-blue-500 text-white px-3 py-1 rounded shuffle-btn" data-id="${playlist.id}">Shuffle Playlist</button>
+          `;
+              playlistList.appendChild(listItem);
             });
-          });
-          document.getElementById("login-section").innerText =
-            "Ready to Shuffle";
+
+            // Add event listeners to shuffle buttons
+            const shuffleButtons = document.querySelectorAll(".shuffle-btn");
+            shuffleButtons.forEach((button) => {
+              button.addEventListener("click", () => {
+                const playlistId = button.getAttribute("data-id");
+                shufflePlaylist(playlistId);
+              });
+            });
+            document.getElementById("login-section").innerText =
+              "Ready to Shuffle";
+          }
         };
 
         const shuffleArray = (array) => {
@@ -126,11 +141,10 @@
             // Update the Spotify playlist with the shuffled tracks
             await updatePlaylist(playlistId, shuffledTracks);
 
-            // Fetch and log the updated tracks to verify
-            const updatedTracks = await getAllPlaylistTracks(playlistId);
-            console.log("Updated Tracks:", updatedTracks);
+            showAlert("Playlist shuffled successfully!", "success");
           } catch (error) {
             console.error("Error shuffling playlist:", error);
+            showAlert("Failed to shuffle playlist. Please try again.", "error");
           }
         };
 
@@ -173,12 +187,15 @@
               },
             });
 
+            if (!response.ok) {
+              throw new Error("Failed to fetch playlist tracks.");
+            }
+
             const data = await response.json();
             allTracks = allTracks.concat(data.items);
 
             url = data.next; // Set the next URL for the next iteration
           }
-          console.log("Original Tracks:", allTracks);
 
           return allTracks;
         };
