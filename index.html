@@ -167,7 +167,9 @@
             if (!response.ok) {
               const data = await response.json();
               console.error("Error updating playlist:", data);
-              throw new Error("Failed to update playlist");
+              throw new Error(
+                `Failed to update playlist. ${data.error.message}`
+              );
             }
           } catch (error) {
             console.error("Error updating playlist:", error);
