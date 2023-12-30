@@ -208,13 +208,19 @@
 
         const findAndRemoveDuplicates = (tracks) => {
           const uniqueTracks = [];
-          const trackMap = new Map();
+          const idMap = new Map();
+          const fullKeyMap = new Map();
 
           tracks.forEach((track) => {
-            const key = `${track.track.uri}-${track.track.name}-${track.track.artists[0].name}-${track.track.album.name}-${track.track.duration_ms}`;
-            if (!trackMap.has(key)) {
-              trackMap.set(key, true);
-              uniqueTracks.push(track);
+            const idKey = track.track.uri;
+            const fullKey = `${track.track.name}-${track.track.artists[0].name}-${track.track.album.name}-${track.track.duration_ms}`;
+
+            if (!idMap.has(idKey)) {
+              idMap.set(idKey, true);
+              if (!fullKeyMap.has(fullKey)) {
+                fullKeyMap.set(fullKey, true);
+                uniqueTracks.push(track);
+              }
             }
           });
 
