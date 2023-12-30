@@ -55,7 +55,8 @@
             console.error("Access token not found or invalid.");
             return;
           }
-
+          document.getElementById("login-section").innerText =
+            "Fetching playlists...";
           let allPlaylists = [];
           let limit = 50;
           let offset = 0;
@@ -101,11 +102,10 @@
             button.addEventListener("click", () => {
               const playlistId = button.getAttribute("data-id");
               shufflePlaylist(playlistId);
-              // Change appearance of clicked button (e.g., disable it)
-              button.disabled = true;
-              button.classList.add("bg-gray-400", "cursor-not-allowed");
             });
           });
+          document.getElementById("login-section").innerText =
+            "Ready to Shuffle";
         };
 
         const shuffleArray = (array) => {
@@ -119,7 +119,6 @@
         const shufflePlaylist = async (playlistId) => {
           try {
             const originalTracks = await getAllPlaylistTracks(playlistId);
-            console.log("Original Tracks:", originalTracks);
 
             // Shuffle the tracks
             const shuffledTracks = shuffleArray(originalTracks);
@@ -130,8 +129,6 @@
             // Fetch and log the updated tracks to verify
             const updatedTracks = await getAllPlaylistTracks(playlistId);
             console.log("Updated Tracks:", updatedTracks);
-
-          
           } catch (error) {
             console.error("Error shuffling playlist:", error);
           }
@@ -181,6 +178,7 @@
 
             url = data.next; // Set the next URL for the next iteration
           }
+          console.log("Original Tracks:", allTracks);
 
           return allTracks;
         };
