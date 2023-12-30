@@ -81,6 +81,7 @@
 
               if (data.next) {
                 offset += limit;
+                await sleep(100); // Introduce a delay of 100 milliseconds between batches
               } else {
                 break;
               }
@@ -92,6 +93,8 @@
             showAlert("Failed to fetch playlists. Please try again.", "error");
           }
         };
+
+        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
         const displayPlaylists = (playlists) => {
           const playlistList = document.getElementById("playlist-list");
@@ -152,6 +155,7 @@
           try {
             const chunkSize = 100;
             const totalChunks = Math.ceil(tracks.length / chunkSize);
+            const rateLimitDelay = 1000 / 15; // 15 requests per second
 
             // Replace the first chunk
             const firstChunk = tracks.slice(0, chunkSize);
@@ -159,6 +163,11 @@
 
             // If there are additional chunks, add them to the playlist
             for (let i = 1; i < totalChunks; i++) {
+              // Add rate-limiting delay
+              await new Promise((resolve) =>
+                setTimeout(resolve, rateLimitDelay)
+              );
+
               const start = i * chunkSize;
               const end = (i + 1) * chunkSize;
               const additionalChunk = tracks.slice(start, end);
