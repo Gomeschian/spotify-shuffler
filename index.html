@@ -65,12 +65,9 @@
             let limit = 50;
             let offset = 0;
 
-            // Fetch user ID
-            const userId = await fetchUserId();
-
             while (true) {
               const response = await fetch(
-                `https://api.spotify.com/v1/me/playlists?limit=${limit}&offset=${offset}&owner_id=${userId}`,
+                `https://api.spotify.com/v1/me/playlists?limit=${limit}&offset=${offset}`,
                 {
                   headers: {
                     Authorization: "Bearer " + accessToken,
