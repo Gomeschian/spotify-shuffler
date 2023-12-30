@@ -74,6 +74,8 @@
               throw new Error("Access token not found or invalid.");
             }
 
+            const userId = await getUserId();
+
             document.getElementById("login-section").innerText =
               "Fetching playlists...may take a minute...";
             let allPlaylists = [];
@@ -82,7 +84,7 @@
 
             while (true) {
               const response = await fetch(
-                `https://api.spotify.com/v1/me/playlists?limit=${limit}&offset=${offset}`,
+                `https://api.spotify.com/v1/users/${userId}/playlists?limit=${limit}&offset=${offset}`,
                 {
                   headers: {
                     Authorization: "Bearer " + accessToken,
