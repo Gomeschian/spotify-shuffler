@@ -19,8 +19,8 @@
 
       <div id="playlists-section" style="display: none">
         <h2 class="text-xl font-semibold mb-4">
-          Your Playlists (can't modify if collaborative or owned by someone
-          other than you)
+          All Playlists (can't modify if collaborative or owned by someone other
+          than you)
         </h2>
         <ul id="playlist-list" class="space-y-2">
           <!-- Playlists will be displayed here -->
@@ -207,15 +207,17 @@
             if (removedDuplicates.length > 0) {
               removedDuplicatesDiv.style.display = "block";
               removedDuplicatesDiv.innerHTML = `
-                <p>Removed Duplicates:</p>
-                <ul>
-                    ${removedDuplicates
-                      .map(
-                        (track) =>
-                          `<li>${track.track.name} - ${track.track.artists[0].name} - ${track.track.album.name} (URI: ${track.track.uri})</li>`
-                      )
-                      .join("")}
-                </ul>`;
+    <p>Removed Duplicates:</p>
+    <ol>
+        ${removedDuplicates
+          .map(
+            (track, index) =>
+              `<li>${index + 1}. ${track.track.artists[0].name} - ${
+                track.track.name
+              } Album: ${track.track.album.name} (URI: ${track.track.uri})</li>`
+          )
+          .join("")}
+    </ol>`;
             } else {
               removedDuplicatesDiv.style.display = "none";
             }
