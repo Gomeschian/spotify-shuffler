@@ -135,6 +135,7 @@
         };
 
         const shufflePlaylist = async (playlistId) => {
+          document.getElementById("playlist-list").innerText = "Shuffling...may take a minute...";
           try {
             const originalTracks = await getAllPlaylistTracks(playlistId);
 
@@ -149,6 +150,7 @@
             console.error("Error shuffling playlist:", error);
             showAlert("Failed to shuffle playlist. Please try again.", "error");
           }
+          document.getElementById("playlist-list").innerText = "Ready to Shuffle";
         };
 
         const updatePlaylist = async (playlistId, tracks) => {
