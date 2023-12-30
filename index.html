@@ -135,6 +135,7 @@
         };
 
         const shufflePlaylist = async (playlistId) => {
+          showAlert("Shuffling may take a minute, keep the page open and don't click any other buttons until the shuffle is complete.");
           document.getElementById("login-section").innerText = "Shuffling...may take a minute...";
           try {
             const originalTracks = await getAllPlaylistTracks(playlistId);
@@ -145,7 +146,7 @@
             // Update the Spotify playlist with the shuffled tracks
             await updatePlaylist(playlistId, shuffledTracks);
 
-            showAlert("Playlist shuffled successfully!", "success");
+            showAlert("Playlist shuffled successfully! May need to refresh/reload your playlist", "success");
           } catch (error) {
             console.error("Error shuffling playlist:", error);
             showAlert("Failed to shuffle playlist. Please try again.", "error");
