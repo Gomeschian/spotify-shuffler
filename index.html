@@ -57,7 +57,7 @@
             }
 
             document.getElementById("login-section").innerText =
-              "Fetching playlists...";
+              "Fetching playlists...may take a minute...";
             let allPlaylists = [];
             let limit = 50;
             let offset = 0;
@@ -100,7 +100,7 @@
           const playlistList = document.getElementById("playlist-list");
           if (playlists.length === 0) {
             document.getElementById("login-section").innerText =
-              "No playlists found.";
+              "No playlists found";
           } else {
             playlists.forEach((playlist) => {
               const listItem = document.createElement("li");
@@ -135,7 +135,7 @@
         };
 
         const shufflePlaylist = async (playlistId) => {
-          document.getElementById("playlist-list").innerText = "Shuffling...may take a minute...";
+          document.getElementById("login-section").innerText = "Shuffling...may take a minute...";
           try {
             const originalTracks = await getAllPlaylistTracks(playlistId);
 
@@ -150,7 +150,7 @@
             console.error("Error shuffling playlist:", error);
             showAlert("Failed to shuffle playlist. Please try again.", "error");
           }
-          document.getElementById("playlist-list").innerText = "Ready to Shuffle";
+          document.getElementById("login-section").innerText = "Ready to Shuffle";
         };
 
         const updatePlaylist = async (playlistId, tracks) => {
