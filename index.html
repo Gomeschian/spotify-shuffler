@@ -80,9 +80,11 @@
               }
 
               const data = await response.json();
-              // Filter out playlists that are not collaborative
+              // Filter out playlists that are not made by the user or are collaborative
               const shufflablePlaylists = data.items.filter(
-                (playlist) => !playlist.collaborative
+                (playlist) =>
+                  !playlist.collaborative &&
+                  playlist.owner.id === "YOUR_USER_ID"
               );
               allPlaylists.push(...shufflablePlaylists);
 
