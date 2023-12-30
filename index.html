@@ -18,7 +18,10 @@
       </div>
 
       <div id="playlists-section" style="display: none">
-        <h2 class="text-xl font-semibold mb-4">Your Playlists</h2>
+        <h2 class="text-xl font-semibold mb-4">
+          Your Playlists (can't shuffle collaborative playlists or those made by
+          others)
+        </h2>
         <ul id="playlist-list" class="space-y-2">
           <!-- Playlists will be displayed here -->
         </ul>
@@ -77,7 +80,11 @@
               }
 
               const data = await response.json();
-              allPlaylists.push(...data.items);
+              // Filter out playlists that are not collaborative
+              const shufflablePlaylists = data.items.filter(
+                (playlist) => !playlist.collaborative
+              );
+              allPlaylists.push(...shufflablePlaylists);
 
               if (data.next) {
                 offset += limit;
@@ -135,8 +142,11 @@
         };
 
         const shufflePlaylist = async (playlistId) => {
-          showAlert("Shuffling may take a minute, keep the page open and don't click any other buttons until the shuffle is complete.");
-          document.getElementById("login-section").innerText = "Shuffling...may take a minute...";
+          showAlert(
+            "Shuffling may take a minute, keep the page open and don't click any other buttons until the shuffle is complete."
+          );
+          document.getElementById("login-section").innerText =
+            "Shuffling...may take a minute...";
           try {
             const originalTracks = await getAllPlaylistTracks(playlistId);
 
@@ -146,12 +156,16 @@
             // Update the Spotify playlist with the shuffled tracks
             await updatePlaylist(playlistId, shuffledTracks);
 
-            showAlert("Playlist shuffled successfully! May need to refresh/reload your playlist", "success");
+            showAlert(
+              "Playlist shuffled successfully! May need to refresh/reload your playlist",
+              "success"
+            );
           } catch (error) {
             console.error("Error shuffling playlist:", error);
             showAlert("Failed to shuffle playlist. Please try again.", "error");
           }
-          document.getElementById("login-section").innerText = "Ready to Shuffle";
+          document.getElementById("login-section").innerText =
+            "Ready to Shuffle";
         };
 
         const updatePlaylist = async (playlistId, tracks) => {
