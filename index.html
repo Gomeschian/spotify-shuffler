@@ -146,7 +146,6 @@
               "Ready to Shuffle or Remove Duplicates";
           }
         };
-
         const shuffleArray = (array) => {
           for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -207,9 +206,16 @@
             // Display removed duplicates in the corresponding div
             if (removedDuplicates.length > 0) {
               removedDuplicatesDiv.style.display = "block";
-              removedDuplicatesDiv.innerText = `Removed Duplicates: ${removedDuplicates
-                .map((track) => track.track.name)
-                .join(", ")}`;
+              removedDuplicatesDiv.innerHTML = `
+                <p>Removed Duplicates:</p>
+                <ul>
+                    ${removedDuplicates
+                      .map(
+                        (track) =>
+                          `<li>${track.track.name} - ${track.track.artists[0].name} - ${track.track.album.name} (URI: ${track.track.uri})</li>`
+                      )
+                      .join("")}
+                </ul>`;
             } else {
               removedDuplicatesDiv.style.display = "none";
             }
@@ -224,7 +230,6 @@
           document.getElementById("login-section").innerText =
             "Ready to Shuffle or Remove Duplicates";
         };
-
         const findAndRemoveDuplicates = (tracks) => {
           const uniqueTracks = [];
           const removedDuplicates = [];
