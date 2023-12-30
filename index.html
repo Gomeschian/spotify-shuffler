@@ -29,281 +29,275 @@
     </div>
 
     <script>
-      document.addEventListener("DOMContentLoaded", function () {
-        const clientId = "14d1be042f9746849b214351c89cdda4";
-        const redirectUri = "https://spotify-shuffler-ashen.vercel.app/";
-        const scopes =
-          "playlist-read-private playlist-modify-public playlist-modify-private";
+            document.addEventListener("DOMContentLoaded", function () {
+              const clientId = "14d1be042f9746849b214351c89cdda4";
+              const redirectUri = "https://spotify-shuffler-ashen.vercel.app/";
+              const scopes =
+                "playlist-read-private playlist-modify-public playlist-modify-private";
 
-        const loginSection = document.getElementById("login-section");
-        const playlistsSection = document.getElementById("playlists-section");
+              const loginSection = document.getElementById("login-section");
+              const playlistsSection = document.getElementById("playlists-section");
 
-        const isAuthenticated = () => {
-          const params = new URLSearchParams(window.location.hash.substring(1));
-          return params.has("access_token");
-        };
+              const isAuthenticated = () => {
+                const params = new URLSearchParams(window.location.hash.substring(1));
+                return params.has("access_token");
+              };
 
-        const redirectToAuthorization = () => {
-          window.location.href = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
-            redirectUri
-          )}&scope=${encodeURIComponent(scopes)}&response_type=token`;
-        };
+              const redirectToAuthorization = () => {
+                window.location.href = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
+                  redirectUri
+                )}&scope=${encodeURIComponent(scopes)}&response_type=token`;
+              };
 
-        const accessToken = new URLSearchParams(
-          window.location.hash.substring(1)
-        ).get("access_token");
+              const accessToken = new URLSearchParams(
+                window.location.hash.substring(1)
+              ).get("access_token");
 
-        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+              const fetchUserId = async () => {
+        const response = await fetch("https://api.spotify.com/v1/me", {
+          headers: {
+            Authorization: "Bearer " + accessToken,
+          },
+        });
 
-        const fetchUserId = async () => {
-          const response = await fetch("https://api.spotify.com/v1/me", {
-            headers: {
-              Authorization: "Bearer " + accessToken,
-            },
-          });
+        if (!response.ok) {
+          throw new Error("Failed to fetch user information.");
+        }
 
-          if (!response.ok) {
-            throw new Error("Failed to fetch user information.");
+        const userData = await response.json();
+        return userData.id;
+      };
+
+      const user_id = await fetchUserId();
+
+      const fetchPlaylists = async () => {
+        try {
+          if (!accessToken) {
+            throw new Error("Access token not found or invalid.");
           }
 
-          const userData = await response.json();
-          return userData.id;
-        };
+          document.getElementById("login-section").innerText =
+            "Fetching playlists...may take a minute...";
+          let allPlaylists = [];
+          let limit = 50;
+          let offset = 0;
 
-        fetchUserId().then((user_id) => {
-          const fetchPlaylists = async () => {
-            try {
-              if (!accessToken) {
-                throw new Error("Access token not found or invalid.");
+          while (true) {
+            const response = await fetch(
+              `https://api.spotify.com/v1/me/playlists?limit=${limit}&offset=${offset}`,
+              {
+                headers: {
+                  Authorization: "Bearer " + accessToken,
+                },
               }
+            );
 
-              document.getElementById("login-section").innerText =
-                "Fetching playlists...may take a minute...";
-              let allPlaylists = [];
-              let limit = 50;
-              let offset = 0;
+            if (!response.ok) {
+              throw new Error("Failed to fetch playlists.");
+            }
 
-              while (true) {
+            const data = await response.json();
+            // Filter out playlists that are not made by the user or are collaborative
+            const shufflablePlaylists = data.items.filter(
+              (playlist) =>
+                !playlist.collaborative && playlist.owner.id === user_id
+            );
+            allPlaylists.push(...shufflablePlaylists);
+
+            if (data.next) {
+              offset += limit;
+              await sleep(100); // Introduce a delay of 100 milliseconds between batches
+            } else {
+              break;
+            }
+          }
+
+          displayPlaylists(allPlaylists);
+        } catch (error) {
+          console.error("Error fetching playlists:", error);
+          showAlert("Failed to fetch playlists. Please try again.", "error");
+        }
+      };
+
+              const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+              const displayPlaylists = (playlists) => {
+                const playlistList = document.getElementById("playlist-list");
+                if (playlists.length === 0) {
+                  document.getElementById("login-section").innerText =
+                    "No playlists found";
+                } else {
+                  playlists.forEach((playlist) => {
+                    const listItem = document.createElement("li");
+                    listItem.className =
+                      "flex items-center justify-between bg-white p-2 rounded shadow";
+                    listItem.innerHTML = `
+                  <span class="text-gray-800">${playlist.name}</span>
+                  <button class="bg-blue-500 text-white px-3 py-1 rounded shuffle-btn" data-id="${playlist.id}">Shuffle Playlist</button>
+                `;
+                    playlistList.appendChild(listItem);
+                  });
+
+                  // Add event listeners to shuffle buttons
+                  const shuffleButtons = document.querySelectorAll(".shuffle-btn");
+                  shuffleButtons.forEach((button) => {
+                    button.addEventListener("click", () => {
+                      const playlistId = button.getAttribute("data-id");
+                      shufflePlaylist(playlistId);
+                    });
+                  });
+                  document.getElementById("login-section").innerText =
+                    "Ready to Shuffle";
+                }
+              };
+
+              const shuffleArray = (array) => {
+                for (let i = array.length - 1; i > 0; i--) {
+                  const j = Math.floor(Math.random() * (i + 1));
+                  [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+              };
+
+              const shufflePlaylist = async (playlistId) => {
+                showAlert(
+                  "Shuffling may take a minute, keep the page open and don't click any other buttons until the shuffle is complete."
+                );
+                document.getElementById("login-section").innerText =
+                  "Shuffling...may take a minute...";
+                try {
+                  const originalTracks = await getAllPlaylistTracks(playlistId);
+
+                  // Shuffle the tracks
+                  const shuffledTracks = shuffleArray(originalTracks);
+
+                  // Update the Spotify playlist with the shuffled tracks
+                  await updatePlaylist(playlistId, shuffledTracks);
+
+                  showAlert(
+                    "Playlist shuffled successfully! May need to refresh/reload your playlist",
+                    "success"
+                  );
+                } catch (error) {
+                  console.error("Error shuffling playlist:", error);
+                  showAlert("Failed to shuffle playlist. Please try again.", "error");
+                }
+                document.getElementById("login-section").innerText =
+                  "Ready to Shuffle";
+              };
+
+              const updatePlaylist = async (playlistId, tracks) => {
+                try {
+                  const chunkSize = 100;
+                  const totalChunks = Math.ceil(tracks.length / chunkSize);
+                  const rateLimitDelay = 1000 / 15; // 15 requests per second
+
+                  // Replace the first chunk
+                  const firstChunk = tracks.slice(0, chunkSize);
+                  await replacePlaylistTracks(playlistId, firstChunk);
+
+                  // If there are additional chunks, add them to the playlist
+                  for (let i = 1; i < totalChunks; i++) {
+                    // Add rate-limiting delay
+                    await new Promise((resolve) =>
+                      setTimeout(resolve, rateLimitDelay)
+                    );
+
+                    const start = i * chunkSize;
+                    const end = (i + 1) * chunkSize;
+                    const additionalChunk = tracks.slice(start, end);
+                    await addTracksToPlaylist(playlistId, additionalChunk);
+                  }
+                } catch (error) {
+                  console.error("Error updating playlist:", error);
+                  throw error;
+                }
+              };
+
+              const replacePlaylistTracks = async (playlistId, tracks) => {
                 const response = await fetch(
-                  `https://api.spotify.com/v1/me/playlists?limit=${limit}&offset=${offset}`,
+                  `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
                   {
+                    method: "PUT",
                     headers: {
-                      Authorization: "Bearer " + accessToken,
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${accessToken}`,
                     },
+                    body: JSON.stringify({
+                      uris: tracks.map((track) => track.track.uri),
+                    }),
                   }
                 );
 
                 if (!response.ok) {
-                  throw new Error("Failed to fetch playlists.");
+                  const data = await response.json();
+                  console.error("Error replacing playlist tracks:", data);
+                  throw new Error(
+                    `Failed to replace playlist tracks. ${data.error.message}`
+                  );
                 }
+              };
 
-                const data = await response.json();
-                // Filter out playlists that are not made by the user or are collaborative
-                const shufflablePlaylists = data.items.filter(
-                  (playlist) =>
-                    !playlist.collaborative && playlist.owner.id === user_id
-                );
-                allPlaylists.push(...shufflablePlaylists);
-
-                if (data.next) {
-                  offset += limit;
-                  await sleep(100); // Introduce a delay of 100 milliseconds between batches
-                } else {
-                  break;
-                }
-              }
-
-              displayPlaylists(allPlaylists);
-            } catch (error) {
-              console.error("Error fetching playlists:", error);
-              showAlert(
-                "Failed to fetch playlists. Please try again.",
-                "error"
-              );
-            }
-          };
-
-          const displayPlaylists = (playlists) => {
-            const playlistList = document.getElementById("playlist-list");
-            if (playlists.length === 0) {
-              document.getElementById("login-section").innerText =
-                "No playlists found";
-            } else {
-              playlists.forEach((playlist) => {
-                const listItem = document.createElement("li");
-                listItem.className =
-                  "flex items-center justify-between bg-white p-2 rounded shadow";
-                listItem.innerHTML = `
-              <span class="text-gray-800">${playlist.name}</span>
-              <button class="bg-blue-500 text-white px-3 py-1 rounded shuffle-btn" data-id="${playlist.id}">Shuffle Playlist</button>
-            `;
-                playlistList.appendChild(listItem);
-              });
-
-              // Add event listeners to shuffle buttons
-              const shuffleButtons = document.querySelectorAll(".shuffle-btn");
-              shuffleButtons.forEach((button) => {
-                button.addEventListener("click", () => {
-                  const playlistId = button.getAttribute("data-id");
-                  shufflePlaylist(playlistId);
-                });
-              });
-              document.getElementById("login-section").innerText =
-                "Ready to Shuffle";
-            }
-          };
-
-          const shuffleArray = (array) => {
-            for (let i = array.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-          };
-
-          const shufflePlaylist = async (playlistId) => {
-            showAlert(
-              "Shuffling may take a minute, keep the page open and don't click any other buttons until the shuffle is complete."
-            );
-            document.getElementById("login-section").innerText =
-              "Shuffling...may take a minute...";
-            try {
-              const originalTracks = await getAllPlaylistTracks(playlistId);
-
-              // Shuffle the tracks
-              const shuffledTracks = shuffleArray(originalTracks);
-
-              // Update the Spotify playlist with the shuffled tracks
-              await updatePlaylist(playlistId, shuffledTracks);
-
-              showAlert(
-                "Playlist shuffled successfully! May need to refresh/reload your playlist",
-                "success"
-              );
-            } catch (error) {
-              console.error("Error shuffling playlist:", error);
-              showAlert(
-                "Failed to shuffle playlist. Please try again.",
-                "error"
-              );
-            }
-            document.getElementById("login-section").innerText =
-              "Ready to Shuffle";
-          };
-
-          const updatePlaylist = async (playlistId, tracks) => {
-            try {
-              const chunkSize = 100;
-              const totalChunks = Math.ceil(tracks.length / chunkSize);
-              const rateLimitDelay = 1000 / 15; // 15 requests per second
-
-              // Replace the first chunk
-              const firstChunk = tracks.slice(0, chunkSize);
-              await replacePlaylistTracks(playlistId, firstChunk);
-
-              // If there are additional chunks, add them to the playlist
-              for (let i = 1; i < totalChunks; i++) {
-                // Add rate-limiting delay
-                await new Promise((resolve) =>
-                  setTimeout(resolve, rateLimitDelay)
+              const addTracksToPlaylist = async (playlistId, tracks) => {
+                const response = await fetch(
+                  `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${accessToken}`,
+                    },
+                    body: JSON.stringify({
+                      uris: tracks.map((track) => track.track.uri),
+                    }),
+                  }
                 );
 
-                const start = i * chunkSize;
-                const end = (i + 1) * chunkSize;
-                const additionalChunk = tracks.slice(start, end);
-                await addTracksToPlaylist(playlistId, additionalChunk);
+                if (!response.ok) {
+                  const data = await response.json();
+                  console.error("Error adding tracks to playlist:", data);
+                  throw new Error(
+                    `Failed to add tracks to playlist. ${data.error.message}`
+                  );
+                }
+              };
+
+              const getAllPlaylistTracks = async (playlistId) => {
+                let allTracks = [];
+                let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+
+                while (url) {
+                  const response = await fetch(url, {
+                    method: "GET",
+                    headers: {
+                      Authorization: "Bearer " + accessToken,
+                    },
+                  });
+
+                  if (!response.ok) {
+                    throw new Error("Failed to fetch playlist tracks.");
+                  }
+
+                  const data = await response.json();
+                  allTracks = allTracks.concat(data.items);
+
+                  url = data.next; // Set the next URL for the next iteration
+                }
+
+                return allTracks;
+              };
+
+              const showAlert = (message, type) => {
+                alert(message); // You can replace this with a more sophisticated alert/notification UI
+              };
+
+              if (isAuthenticated()) {
+                playlistsSection.style.display = "block";
+                fetchPlaylists();
+              } else {
+                redirectToAuthorization();
               }
-            } catch (error) {
-              console.error("Error updating playlist:", error);
-              throw error;
-            }
-          };
-
-          const replacePlaylistTracks = async (playlistId, tracks) => {
-            const response = await fetch(
-              `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
-              {
-                method: "PUT",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${accessToken}`,
-                },
-                body: JSON.stringify({
-                  uris: tracks.map((track) => track.track.uri),
-                }),
-              }
-            );
-
-            if (!response.ok) {
-              const data = await response.json();
-              console.error("Error replacing playlist tracks:", data);
-              throw new Error(
-                `Failed to replace playlist tracks. ${data.error.message}`
-              );
-            }
-          };
-
-          const addTracksToPlaylist = async (playlistId, tracks) => {
-            const response = await fetch(
-              `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${accessToken}`,
-                },
-                body: JSON.stringify({
-                  uris: tracks.map((track) => track.track.uri),
-                }),
-              }
-            );
-
-            if (!response.ok) {
-              const data = await response.json();
-              console.error("Error adding tracks to playlist:", data);
-              throw new Error(
-                `Failed to add tracks to playlist. ${data.error.message}`
-              );
-            }
-          };
-
-          const getAllPlaylistTracks = async (playlistId) => {
-            let allTracks = [];
-            let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
-
-            while (url) {
-              const response = await fetch(url, {
-                method: "GET",
-                headers: {
-                  Authorization: "Bearer " + accessToken,
-                },
-              });
-
-              if (!response.ok) {
-                throw new Error("Failed to fetch playlist tracks.");
-              }
-
-              const data = await response.json();
-              allTracks = allTracks.concat(data.items);
-
-              url = data.next; // Set the next URL for the next iteration
-            }
-
-            return allTracks;
-          };
-
-          const showAlert = (message, type) => {
-            alert(message); // You can replace this with a more sophisticated alert/notification UI
-          };
-
-          if (isAuthenticated()) {
-            playlistsSection.style.display = "block";
-            fetchPlaylists();
-          } else {
-            redirectToAuthorization();
-          }
-        });
-      });
+            });
     </script>
   </body>
 </html>
