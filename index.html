@@ -27,7 +27,6 @@
         </ul>
       </div>
     </div>
-
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         const clientId = "14d1be042f9746849b214351c89cdda4";
@@ -112,6 +111,7 @@
               listItem.innerHTML = `
             <span class="text-gray-800">${playlist.name}</span>
             <button class="bg-blue-500 text-white px-3 py-1 rounded shuffle-btn" data-id="${playlist.id}">Shuffle Playlist</button>
+            <button class="bg-red-500 text-white px-3 py-1 rounded remove-duplicates-btn" data-id="${playlist.id}">Remove Duplicates</button>
           `;
               playlistList.appendChild(listItem);
             });
@@ -124,8 +124,20 @@
                 shufflePlaylist(playlistId);
               });
             });
+
+            // Add event listeners to remove duplicates buttons
+            const removeDuplicatesButtons = document.querySelectorAll(
+              ".remove-duplicates-btn"
+            );
+            removeDuplicatesButtons.forEach((button) => {
+              button.addEventListener("click", () => {
+                const playlistId = button.getAttribute("data-id");
+                removeDuplicates(playlistId);
+              });
+            });
+
             document.getElementById("login-section").innerText =
-              "Ready to Shuffle";
+              "Ready to Shuffle or Remove Duplicates";
           }
         };
 
@@ -161,7 +173,52 @@
             showAlert("Failed to shuffle playlist. Please try again.", "error");
           }
           document.getElementById("login-section").innerText =
-            "Ready to Shuffle";
+            "Ready to Shuffle or Remove Duplicates";
+        };
+
+        const removeDuplicates = async (playlistId) => {
+          showAlert(
+            "Removing duplicates may take a minute, keep the page open and don't click any other buttons until the process is complete."
+          );
+          document.getElementById("login-section").innerText =
+            "Removing duplicates...may take a minute...";
+          try {
+            const originalTracks = await getAllPlaylistTracks(playlistId);
+
+            // Find and remove duplicates
+            const uniqueTracks = findAndRemoveDuplicates(originalTracks);
+
+            // Update the Spotify playlist with the unique tracks
+            await updatePlaylist(playlistId, uniqueTracks);
+
+            showAlert(
+              "Duplicates removed successfully! May need to refresh/reload your playlist",
+              "success"
+            );
+          } catch (error) {
+            console.error("Error removing duplicates:", error);
+            showAlert(
+              "Failed to remove duplicates. Please try again.",
+              "error"
+            );
+          }
+          document.getElementById("login-section").innerText =
+            "Ready to Shuffle or Remove Duplicates";
+        };
+
+        const findAndRemoveDuplicates = (tracks) => {
+          const uniqueTracks = [];
+          const trackMap = new Map();
+
+          tracks.forEach((track) => {
+            const key = `${track.track.uri}-${track.track.name}-${track.track.artists[0].name}-${track.track.album.name}-${track.track.duration_ms}`;
+            if (!trackMap.has(key)) {
+              trackMap.set(key, true);
+              uniqueTracks.push(track);
+            }
+          });
+
+          return uniqueTracks;
         };
 
         const updatePlaylist = async (playlistId, tracks) => {
