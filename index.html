@@ -183,39 +183,43 @@
 
         const removeDuplicates = async (playlistId, removedDuplicatesDiv) => {
           showAlert(
-            "Analyzing duplicates...may take a minute. Please review the list before confirming removal."
+            "Removing duplicates may take a minute, keep the page open and don't click any other buttons until the process is complete."
           );
           document.getElementById("login-section").innerText =
-            "Analyzing duplicates...may take a minute...";
+            "Removing duplicates...may take a minute...";
 
           try {
             const originalTracks = await getAllPlaylistTracks(playlistId);
 
-            // Find and list duplicates
+            // Find and remove duplicates
             const { uniqueTracks, removedDuplicates } =
               findAndRemoveDuplicates(originalTracks);
 
-            // Display the list of duplicates
-            displayDuplicateList(removedDuplicates, removedDuplicatesDiv);
+            // Update the Spotify playlist with the unique tracks
+            await updatePlaylist(playlistId, uniqueTracks);
 
-            // Prompt the user to confirm removal
-            const userConfirmation = confirm(
-              "Do you want to remove the listed duplicates?"
+            showAlert(
+              `Duplicates processed successfully! Found and removed ${removedDuplicates.length} duplicate tracks. May need to refresh/reload your playlist`,
+              "success"
             );
 
-            if (userConfirmation) {
-              // Update the Spotify playlist with the unique tracks
-              await updatePlaylist(playlistId, uniqueTracks);
-
-              showAlert(
-                `Duplicates removed successfully! Removed ${removedDuplicates.length} duplicate tracks. May need to refresh/reload your playlist`,
-                "success"
-              );
-
-              // Hide the removed duplicates div
-              removedDuplicatesDiv.style.display = "none";
+            // Display removed duplicates in the corresponding div
+            if (removedDuplicates.length > 0) {
+              removedDuplicatesDiv.style.display = "block";
+              removedDuplicatesDiv.innerHTML = `
+    <p>Removed Duplicates:</p>
+    <ol>
+        ${removedDuplicates
+          .map(
+            (track, index) =>
+              `<li>${index + 1}. ${track.track.artists[0].name} - ${
+                track.track.name
+              } Album: ${track.track.album.name} (URI: ${track.track.uri})</li>`
+          )
+          .join("")}
+    </ol>`;
             } else {
-              showAlert("Duplicate removal canceled by user.", "info");
+              removedDuplicatesDiv.style.display = "none";
             }
           } catch (error) {
             console.error("Error removing duplicates:", error);
@@ -228,33 +232,6 @@
           document.getElementById("login-section").innerText =
             "Ready to Shuffle or Remove Duplicates";
         };
-
-        const displayDuplicateList = (
-          removedDuplicates,
-          removedDuplicatesDiv
-        ) => {
-          // Display removed duplicates in the corresponding div
-          if (removedDuplicates.length > 0) {
-            removedDuplicatesDiv.style.display = "block";
-            removedDuplicatesDiv.innerHTML = `
-      <p>List of Duplicates:</p>
-      <ul>
-        ${removedDuplicates
-          .map(
-            (track, index) =>
-              `<li>${index + 1}. ${track.track.artists[0].name} - ${
-                track.track.name
-              } Album: ${track.track.album.name} (URI: ${track.track.uri})</li>`
-          )
-          .join("")}
-      </ul>
-      <p>Do you want to remove these duplicates?</p>
-    `;
-          } else {
-            removedDuplicatesDiv.style.display = "none";
-          }
-        };
-
         const findAndRemoveDuplicates = (tracks) => {
           const uniqueTracks = [];
           const removedDuplicates = [];
