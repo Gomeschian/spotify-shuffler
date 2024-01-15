@@ -9,28 +9,31 @@
       rel="stylesheet"
     />
   </head>
-  <body class="bg-gray-100 p-4">
-    <div class="max-w-xl mx-auto">
-      <h1 class="text-3xl font-bold mb-4">Spotify Playlist Shuffler</h1>
+  <body class="bg-gray-900 text-white">
+    <div class="container mx-auto p-4">
+      <h1 class="text-3xl font-bold mb-6 text-green-500">
+        Spotify Playlist Shuffler
+      </h1>
 
-      <div id="login-section" class="mb-8">
-        <p class="text-gray-600" id="login-status">Not logged in</p>
+      <div class="bg-gray-800 p-4 rounded mb-6">
+        <p class="text-lg mb-2">Not logged in</p>
         <button
+          class="bg-green-500 text-white px-4 py-2 rounded"
           id="login-button"
-          class="bg-green-500 text-white px-3 py-1 rounded"
         >
           Login with Spotify
         </button>
       </div>
 
-      <div id="playlists-section" style="display: none">
-        <h2 class="text-xl font-semibold mb-4">
-          All Playlists (can't modify if collaborative or owned by someone other
-          than you)
-        </h2>
-        <ul id="playlist-list" class="space-y-2">
+      <div
+        class="bg-gray-800 p-4 rounded"
+        id="playlists-section"
+        style="display: none"
+      >
+        <h2 class="text-xl font-semibold mb-4">All Playlists</h2>
+        <div id="playlist-list" class="space-y-4">
           <!-- Playlists will be displayed here -->
-        </ul>
+        </div>
       </div>
     </div>
     <script>
