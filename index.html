@@ -14,7 +14,13 @@
       <h1 class="text-3xl font-bold mb-4">Spotify Playlist Shuffler</h1>
 
       <div id="login-section" class="mb-8">
-        <p class="text-gray-600">Checking authentication...</p>
+        <p class="text-gray-600" id="login-status">Not logged in</p>
+        <button
+          id="login-button"
+          class="bg-green-500 text-white px-3 py-1 rounded"
+        >
+          Login with Spotify
+        </button>
       </div>
 
       <div id="playlists-section" style="display: none">
@@ -365,12 +371,24 @@
           alert(message); // You can replace this with a more sophisticated alert/notification UI
         };
 
-        if (isAuthenticated()) {
-          playlistsSection.style.display = "block";
-          fetchPlaylists();
-        } else {
+        const updateLoginStatus = () => {
+          if (isAuthenticated()) {
+            document.getElementById("login-status").innerText = "Logged in";
+            playlistsSection.style.display = "block";
+            fetchPlaylists();
+          } else {
+            document.getElementById("login-status").innerText = "Not logged in";
+            playlistsSection.style.display = "none";
+          }
+        };
+
+        const loginButton = document.getElementById("login-button");
+
+        loginButton.addEventListener("click", () => {
           redirectToAuthorization();
-        }
+        });
+
+        updateLoginStatus();
       });
     </script>
   </body>
