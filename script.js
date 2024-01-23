@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
               <span class="text-gray-800">${playlist.name}</span>
               <button class="bg-green-500 text-white px-3 py-1 rounded shuffle-btn" data-id="${playlist.id}">Shuffle Playlist</button>
               <button class="bg-blue-500 text-white px-3 py-1 rounded remove-duplicates-btn" data-id="${playlist.id}">Remove Duplicates</button>
-              <button class="bg-red-500 text-white px-3 py-1 rounded remove-recent-scrobbles-btn" data-id="${playlist.id}">Remove Recently Played (Last.fm)</button>
+              <button class="bg-red-500 text-white px-3 py-1 rounded remove-recent-scrobbles-btn" data-id="${playlist.id}">Remove Recently Played (Last.fm - No Login Needed)</button>
           `;
 
         // Create a div for removed duplicates
@@ -347,104 +347,135 @@ document.addEventListener("DOMContentLoaded", function () {
     return allTracks;
   };
 
-// Refactored code with console.log statements for debugging
+  // Refactored code with console.log statements for debugging
 
-const removeRecentScrobbles = async (playlistId) => {
-  try {
-    const tracksToRemove = [];
-
-    const lastFMUsername = prompt("Enter Last.fm username: ");
-
-    const playlistTracks = await getAllPlaylistTracks(playlistId);
-    const recentScrobbles = await fetchScrobbles(lastFMKey, lastFMUsername);
-
-    playlistTracks.forEach((track) => {
-      recentScrobbles.forEach((scrobble) => {
-        console.log("Track:", track);
-        console.log("Scrobble:", scrobble);
-
-        if (
-          track.trackName.toLowerCase().trim() ===
-            scrobble.trackName.toLowerCase().trim() &&
-          track.artist.toLowerCase().trim() ===
-            scrobble.artist.toLowerCase().trim() &&
-          track.album.toLowerCase().trim() ===
-            scrobble.album.toLowerCase().trim()
-        ) {
-          tracksToRemove.push(track);
-        }
-      });
-    });
-
-    const chunkSize = 100;
-    const totalChunks = Math.ceil(tracksToRemove.length / chunkSize);
-
-    for (let i = 0; i < totalChunks; i++) {
-      const start = i * chunkSize;
-      const end = (i + 1) * chunkSize;
-      const chunk = tracksToRemove.slice(start, end);
-
-      console.log("Chunk:", chunk);
-
-      await removeTracksFromPlaylist(playlistId, chunk);
-    }
-
-    const removedTracksMessage =
-      tracksToRemove.length > 0
-        ? `Removed ${
-            tracksToRemove.length
-          } track(s) from the playlist:\n\n${tracksToRemove
-            .map(
-              (track) =>
-                `${track.trackName} - ${track.artist} - ${track.album}`
-            )
-            .join("\n")}`
-        : "No recent scrobbles found in the playlist.";
-
-    console.log("Removed Tracks Message:", removedTracksMessage);
-
-    return alert(removedTracksMessage);
-  } catch (error) {
-    console.error("Error removing tracks from playlist:", error);
-    throw error;
-  }
-};
-
-const removeTracksFromPlaylist = async (playlistId, tracksToRemove) => {
-  let success = false;
-
-  while (!success) {
+  const removeRecentScrobbles = async (playlistId) => {
     try {
-      const response = await fetch(
-        `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            tracks: tracksToRemove.map((track) => ({ uri: track.track.uri })),
-          }),
-        }
-      );
+      const tracksToRemove = [];
 
-      if (response.ok) {
-        // Request was successful, exit the loop
-        success = true;
-        console.log("Tracks removed successfully");
-      } else {
-        // Request failed, retry after a delay
-        console.log("Request failed, retrying after 1 second...");
+      // Fetch Last.fm scrobbles using your lastfm.js module
+      const lastFMUsername = prompt("Enter Last.fm username: ");
+      // Check if the user canceled the input
+      if (lastFMUsername === null) {
+        console.log("User canceled the input. Operation canceled.");
+        return; // Exit the function
+      }
+
+      let matchOnAlbum = prompt(
+        "Do you want to match on album name? Enter 1 for track and artist name only, or 2 for album name as well."
+      );
+      while (matchOnAlbum !== "1" && matchOnAlbum !== "2") {
+        if (matchOnAlbum === null) {
+          console.log("User canceled the input. Operation canceled.");
+          return; // Exit the function
+        }
+        matchOnAlbum = prompt(
+          "Invalid input. Enter 1 for track and artist name only, or 2 for album name as well."
+        );
+      }
+
+      const recentScrobbles = await fetchScrobbles();
+      console.log("Recent Scrobbles:", recentScrobbles);
+
+      const playlistTracks = await getAllPlaylistTracks(playlistId);
+
+      playlistTracks.forEach((track) => {
+        let foundMatch = false; // Add a flag to track if a match is found for the current track
+        recentScrobbles.forEach((scrobble) => {
+          if (
+            !foundMatch &&
+            ((matchOnAlbum === "2" &&
+              track.track.name.toLowerCase().trim() ===
+                scrobble.trackName.toLowerCase().trim() &&
+              track.track.artists[0].name.toLowerCase().trim() ===
+                scrobble.artist.toLowerCase().trim() &&
+              track.track.album.name.toLowerCase().trim() ===
+                scrobble.album.toLowerCase().trim()) ||
+              (matchOnAlbum === "1" &&
+                track.track.name.toLowerCase().trim() ===
+                  scrobble.trackName.toLowerCase().trim() &&
+                track.track.artists[0].name.toLowerCase().trim() ===
+                  scrobble.artist.toLowerCase().trim()))
+          ) {
+            tracksToRemove.push(track);
+            foundMatch = true; // Set the flag to true once a match is found
+          }
+        });
+      });
+
+      // ... rest of the code remains the same
+
+      const chunkSize = 100;
+      const totalChunks = Math.ceil(tracksToRemove.length / chunkSize);
+      const removedTracks = [];
+
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * chunkSize;
+        const end = (i + 1) * chunkSize;
+        const chunk = tracksToRemove.slice(start, end);
+
+        console.log("Chunk:", chunk);
+
+        await removeTracksFromPlaylist(playlistId, chunk);
+        removedTracks.push(...chunk);
+      }
+
+      const removedTracksMessage =
+        removedTracks.length > 0
+          ? `Removed ${
+              tracksToRemove.length
+            } track(s) from the playlist:\n\n${tracksToRemove
+              .map(
+                (track) =>
+                  `${track.track.artists[0].name} - ${track.track.name} - ${track.track.album.name}`
+              )
+              .join("\n")}`
+          : "No recent scrobbles found in the playlist.";
+
+      console.log("Removed Tracks Message:", removedTracksMessage);
+
+      return alert(removedTracksMessage);
+    } catch (error) {
+      console.error("Error removing tracks from playlist:", error);
+      throw error;
+    }
+  };
+
+  const removeTracksFromPlaylist = async (playlistId, tracksToRemove) => {
+    let success = false;
+
+    while (!success) {
+      try {
+        const response = await fetch(
+          `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              tracks: tracksToRemove.map((track) => ({ uri: track.track.uri })),
+            }),
+          }
+        );
+
+        if (response.ok) {
+          // Request was successful, exit the loop
+          success = true;
+          console.log("Tracks removed successfully");
+        } else {
+          // Request failed, retry after a delay
+          console.log("Request failed, retrying after 1 second...");
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second before retrying
+        }
+      } catch (error) {
+        // Error occurred, retry after a delay
+        console.log("Error occurred, retrying after 1 second...");
         await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second before retrying
       }
-    } catch (error) {
-      // Error occurred, retry after a delay
-      console.log("Error occurred, retrying after 1 second...");
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second before retrying
     }
-  }
-};
+  };
 
   const showAlert = (message, type) => {
     alert(message); // You can replace this with a more sophisticated alert/notification UI
