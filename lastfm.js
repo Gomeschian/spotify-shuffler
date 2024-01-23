@@ -8,7 +8,7 @@ export const fetchScrobbles = async (
 ) => {
   try {
     const fromDate = new Date();
-    fromDate.setMonth(fromDate.getMonth() - 1); // Last month
+    fromDate.setMonth(fromDate.getMonth() - 3); // Last 3 months
     const fromTimestamp = Math.floor(fromDate.getTime() / 1000);
 
     const response = await fetch(
