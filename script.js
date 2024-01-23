@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const scopes =
     "playlist-read-private playlist-modify-public playlist-modify-private";
 
-
   const playlistsSection = document.getElementById("playlists-section");
 
   const isAuthenticated = () => {
@@ -320,33 +319,33 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 
-const getAllPlaylistTracks = async (playlistId) => {
-  let allTracks = [];
-  let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+  const getAllPlaylistTracks = async (playlistId) => {
+    let allTracks = [];
+    let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
 
-  while (url) {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: "Bearer " + accessToken,
-      },
-    });
+    while (url) {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: "Bearer " + accessToken,
+        },
+      });
 
-    if (!response.ok) {
-      console.log("Failed to fetch playlist tracks.");
-      throw new Error("Failed to fetch playlist tracks.");
+      if (!response.ok) {
+        console.log("Failed to fetch playlist tracks.");
+        throw new Error("Failed to fetch playlist tracks.");
+      }
+
+      const data = await response.json();
+      allTracks = allTracks.concat(data.items);
+
+      console.log("Fetched tracks:", allTracks.length);
+      url = data.next; // Set the next URL for the next iteration
     }
 
-    const data = await response.json();
-    allTracks = allTracks.concat(data.items);
-
-    console.log("Fetched tracks:", allTracks.length);
-    url = data.next; // Set the next URL for the next iteration
-  }
-
-  console.log("All tracks fetched:", allTracks);
-  return allTracks;
-};
+    console.log("All tracks fetched:", allTracks);
+    return allTracks;
+  };
 
   // Refactored code with console.log statements for debugging
 
@@ -363,7 +362,7 @@ const getAllPlaylistTracks = async (playlistId) => {
       }
 
       let matchOnAlbum = prompt(
-        "What fields do you want to match on? Enter 1 for track name and artist name, 2 for album name as well, or 3 for track and album name only."
+        "What fields do you want to match on? Enter 1 for track and artist name only, 2 for album name as well (narrowest), or 3 for track and album name only (broadest)."
       );
       while (
         matchOnAlbum !== "1" &&
@@ -375,7 +374,7 @@ const getAllPlaylistTracks = async (playlistId) => {
           return; // Exit the function
         }
         matchOnAlbum = prompt(
-          "Invalid input. Enter 1 for track and artist name only, 2 for album name as well, or 3 for track and album name only."
+          "Invalid input. Enter 1 for track and artist name only, 2 for album name as well (narrowest), or 3 for track and album name only (broadest)."
         );
       }
 
