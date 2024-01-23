@@ -25,9 +25,7 @@ export const fetchScrobbles = async (
       }));
       const totalScrobbles = parseInt(data.recenttracks["@attr"].total, 10);
 
-      console.log(
-        `Page ${page}: Fetched ${scrobbles.length} scrobbles. Total Scrobbles: ${totalScrobbles}: `
-      );
+      console.log(`Page ${page}: Fetched ${scrobbles.length} scrobbles.`);
       allScrobbles.push(...scrobbles);
 
       if (scrobbles.length > 0 && scrobbles.length < totalScrobbles) {
@@ -45,5 +43,4 @@ export const fetchScrobbles = async (
   }
   console.log("AllScrobbles:", allScrobbles);
   return allScrobbles;
-
 };

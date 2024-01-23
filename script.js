@@ -9,9 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const scopes =
     "playlist-read-private playlist-modify-public playlist-modify-private";
 
-  const lastFMKey = "dbb183026f5caf77c9d896eca1dde44d";
 
-  const loginSection = document.getElementById("login-section");
   const playlistsSection = document.getElementById("playlists-section");
 
   const isAuthenticated = () => {
@@ -322,30 +320,33 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 
-  const getAllPlaylistTracks = async (playlistId) => {
-    let allTracks = [];
-    let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
+const getAllPlaylistTracks = async (playlistId) => {
+  let allTracks = [];
+  let url = `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`;
 
-    while (url) {
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: "Bearer " + accessToken,
-        },
-      });
+  while (url) {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: "Bearer " + accessToken,
+      },
+    });
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch playlist tracks.");
-      }
-
-      const data = await response.json();
-      allTracks = allTracks.concat(data.items);
-
-      url = data.next; // Set the next URL for the next iteration
+    if (!response.ok) {
+      console.log("Failed to fetch playlist tracks.");
+      throw new Error("Failed to fetch playlist tracks.");
     }
 
-    return allTracks;
-  };
+    const data = await response.json();
+    allTracks = allTracks.concat(data.items);
+
+    console.log("Fetched tracks:", allTracks.length);
+    url = data.next; // Set the next URL for the next iteration
+  }
+
+  console.log("All tracks fetched:", allTracks);
+  return allTracks;
+};
 
   // Refactored code with console.log statements for debugging
 
