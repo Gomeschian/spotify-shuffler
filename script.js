@@ -362,15 +362,19 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       let matchOnAlbum = prompt(
-        "Do you want to match on album name? Enter 1 for track and artist name only, or 2 for album name as well."
+        "What fields do you want to match on? Enter 1 for track name and artist name, 2 for album name as well, or 3 for track and album name only."
       );
-      while (matchOnAlbum !== "1" && matchOnAlbum !== "2") {
+      while (
+        matchOnAlbum !== "1" &&
+        matchOnAlbum !== "2" &&
+        matchOnAlbum !== "3"
+      ) {
         if (matchOnAlbum === null) {
           console.log("User canceled the input. Operation canceled.");
           return; // Exit the function
         }
         matchOnAlbum = prompt(
-          "Invalid input. Enter 1 for track and artist name only, or 2 for album name as well."
+          "Invalid input. Enter 1 for track and artist name only, 2 for album name as well, or 3 for track and album name only."
         );
       }
 
@@ -384,13 +388,18 @@ document.addEventListener("DOMContentLoaded", function () {
         recentScrobbles.forEach((scrobble) => {
           if (
             !foundMatch &&
-            ((matchOnAlbum === "2" &&
+            ((matchOnAlbum === "3" &&
               track.track.name.toLowerCase().trim() ===
                 scrobble.trackName.toLowerCase().trim() &&
-              track.track.artists[0].name.toLowerCase().trim() ===
-                scrobble.artist.toLowerCase().trim() &&
               track.track.album.name.toLowerCase().trim() ===
                 scrobble.album.toLowerCase().trim()) ||
+              (matchOnAlbum === "2" &&
+                track.track.name.toLowerCase().trim() ===
+                  scrobble.trackName.toLowerCase().trim() &&
+                track.track.artists[0].name.toLowerCase().trim() ===
+                  scrobble.artist.toLowerCase().trim() &&
+                track.track.album.name.toLowerCase().trim() ===
+                  scrobble.album.toLowerCase().trim()) ||
               (matchOnAlbum === "1" &&
                 track.track.name.toLowerCase().trim() ===
                   scrobble.trackName.toLowerCase().trim() &&
