@@ -1,4 +1,4 @@
-const apiKey = "713e12918e4076ec6539e4e4fd550d94";
+const apiKey = "dbb183026f5caf77c9d896eca1dde44d";
 const username = "charlesel";
 
 export const fetchScrobbles = async (
