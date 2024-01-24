@@ -110,7 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
           // Prompt the user to select 1 for a new playlist or 2 to update the existing playlist
           const userChoice = prompt(
-            "Shuffling may take a minute, keep the page open and don't click any other buttons until the shuffle is complete. Enter 1 to create a new playlist (safer), or 2 to update the existing playlist (possibility of data loss if interrupted or something goes wrong):"
+            "Shuffling may take a minute, keep the page open and don't click any other buttons until the shuffle is complete. Enter 1 to create a new playlist (safer), or 2 to update the existing playlist (possibility of data loss if interrupted or something goes wrong - a backup copy will be created before modifying the playlist):"
           );
 
           if (userChoice === "1") {
@@ -158,27 +158,58 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const shufflePlaylist = async (playlistId) => {
     document.getElementById("login-section").innerText =
-      "Shuffling...may take a minute...";
+      "Creating backup and shuffling...may take a minute...";
+  
     try {
       const originalTracks = await getAllPlaylistTracks(playlistId);
-
+  
+      // Create a backup playlist
+      const backupPlaylistId = await createBackupPlaylist(playlistId);
+  
       // Shuffle the tracks
       const shuffledTracks = shuffleArray(originalTracks);
-
-      // Update the Spotify playlist with the shuffled tracks
+  
+      // Update the original playlist with the shuffled tracks
       await updatePlaylist(playlistId, shuffledTracks);
-
+  
       showAlert(
-        "Playlist shuffled successfully! May need to refresh/reload your playlist",
+        "Playlist shuffled successfully! May need to refresh/reload your playlist.",
         "success"
       );
     } catch (error) {
       console.error("Error shuffling playlist:", error);
       showAlert("Failed to shuffle playlist. Please try again.", "error");
     }
+  
     document.getElementById("login-section").innerText =
       "Ready to Shuffle or Remove Duplicates";
   };
+  
+  const createBackupPlaylist = async (originalPlaylistId) => {
+    try {
+      // Get the name of the original playlist
+      const originalPlaylistName = await getPlaylistName(originalPlaylistId);
+  
+      // Create a new playlist name for the backup
+      const backupPlaylistName = `${originalPlaylistName} Backup`;
+  
+      // Create a new playlist for backup
+      const backupPlaylistId = await createNewPlaylist(
+        originalPlaylistId,
+        backupPlaylistName
+      );
+  
+      // Copy all tracks from the original playlist to the backup playlist
+      const originalTracks = await getAllPlaylistTracks(originalPlaylistId);
+      await updatePlaylistTracks(backupPlaylistId, originalTracks);
+  
+      return backupPlaylistId;
+    } catch (error) {
+      console.error("Error creating backup playlist:", error);
+      throw error;
+    }
+  };
+  
 
   const removeDuplicates = async (playlistId, removedDuplicatesDiv) => {
     showAlert(
