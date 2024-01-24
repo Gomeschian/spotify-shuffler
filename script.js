@@ -107,7 +107,20 @@ document.addEventListener("DOMContentLoaded", function () {
         const shuffleButton = listItem.querySelector(".shuffle-btn");
         shuffleButton.addEventListener("click", () => {
           const playlistId = shuffleButton.getAttribute("data-id");
-          shufflePlaylist(playlistId);
+
+          // Prompt the user to select 1 for a new playlist or 2 to update the existing playlist
+          const userChoice = prompt(
+            "Shuffling may take a minute, keep the page open and don't click any other buttons until the shuffle is complete. Enter 1 to create a new playlist (safer), or 2 to update the existing playlist (possibility of data loss if interrupted or something goes wrong):"
+          );
+
+          if (userChoice === "1") {
+            shuffleAndCreateNewPlaylist(playlistId);
+          } else if (userChoice === "2") {
+            shufflePlaylist(playlistId);
+          } else {
+            // Handle invalid input or cancel
+            alert("Invalid choice or user canceled.");
+          }
         });
 
         // Add event listeners to remove duplicates buttons
@@ -144,9 +157,6 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   const shufflePlaylist = async (playlistId) => {
-    showAlert(
-      "Shuffling may take a minute, keep the page open and don't click any other buttons until the shuffle is complete."
-    );
     document.getElementById("login-section").innerText =
       "Shuffling...may take a minute...";
     try {
@@ -483,6 +493,133 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("Error occurred, retrying after 1 second...");
         await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second before retrying
       }
+    }
+  };
+
+  const createNewPlaylist = async (originalPlaylistId, newPlaylistName) => {
+    try {
+      // Create a new playlist
+      const response = await fetch(`https://api.spotify.com/v1/me/playlists`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          name: newPlaylistName,
+          public: false, // Set to true if you want the new playlist to be public
+          collaborative: false,
+          description: "New playlist created by your web app.",
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Error creating new playlist:", data);
+        throw new Error(`Failed to create new playlist. ${data.error.message}`);
+      }
+
+      const newPlaylistData = await response.json();
+      const newPlaylistId = newPlaylistData.id;
+
+      return newPlaylistId;
+    } catch (error) {
+      console.error("Error creating new playlist:", error);
+      throw error;
+    }
+  };
+
+  const updatePlaylistTracks = async (playlistId, tracks) => {
+    try {
+      const batchSize = 100;
+      for (let i = 0; i < tracks.length; i += batchSize) {
+        const batch = tracks.slice(i, i + batchSize);
+        const response = await fetch(
+          `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              uris: batch.map((track) => track.track.uri),
+            }),
+          }
+        );
+
+        if (!response.ok) {
+          const data = await response.json();
+          console.error("Error updating playlist tracks:", data);
+          throw new Error(
+            `Failed to update playlist tracks. ${data.error.message}`
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error updating playlist tracks:", error);
+      throw error;
+    }
+  };
+
+  const getPlaylistName = async (playlistId) => {
+    try {
+      const response = await fetch(
+        `https://api.spotify.com/v1/playlists/${playlistId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        console.error("Error fetching playlist name:", data);
+        throw new Error(`Failed to fetch playlist name. ${data.error.message}`);
+      }
+
+      const playlistData = await response.json();
+      return playlistData.name;
+    } catch (error) {
+      console.error("Error fetching playlist name:", error);
+      throw error;
+    }
+  };
+
+  const shuffleAndCreateNewPlaylist = async (originalPlaylistId) => {
+    try {
+      // Get the name of the existing playlist
+      const originalPlaylistName = await getPlaylistName(originalPlaylistId);
+
+      // Create a new playlist name by appending "Shuffled"
+      const newPlaylistName = `${originalPlaylistName} Shuffled`;
+
+      const originalTracks = await getAllPlaylistTracks(originalPlaylistId);
+
+      // Shuffle the tracks
+      const shuffledTracks = shuffleArray(originalTracks);
+
+      // Create a new playlist
+      const newPlaylistId = await createNewPlaylist(
+        originalPlaylistId,
+        newPlaylistName
+      );
+
+      // Update the new playlist with the shuffled tracks
+      await updatePlaylistTracks(newPlaylistId, shuffledTracks);
+
+      showAlert(
+        `New playlist "${newPlaylistName}" created and shuffled successfully!`,
+        "success"
+      );
+    } catch (error) {
+      console.error("Error shuffling and creating new playlist:", error);
+      showAlert(
+        "Failed to create new playlist or shuffle. Please try again.",
+        "error"
+      );
     }
   };
 
