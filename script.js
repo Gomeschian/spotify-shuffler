@@ -161,8 +161,6 @@ document.addEventListener("DOMContentLoaded", function () {
       "Creating backup and shuffling...may take a minute...";
 
     try {
-      
-
       const originalTracks = await getAllPlaylistTracks(playlistId);
 
       // Create a backup playlist
@@ -174,13 +172,19 @@ document.addEventListener("DOMContentLoaded", function () {
       // Update the original playlist with the shuffled tracks
       await updatePlaylist(playlistId, shuffledTracks);
 
-
       showAlert(
         "Playlist shuffled successfully! May need to refresh/reload your playlist.",
         "success"
       );
-      unFollowBackupPlaylist(backupPlaylistId);
-
+      try {
+        // Remove the backup playlist
+        await unFollowBackupPlaylist(backupPlaylistId);
+      } catch (error) {
+        console.error("Error removing backup playlist:", error);
+        showAlert(
+          "Failed to remove backup playlist. Please delete manually.",
+        );
+      }
     } catch (error) {
       console.error("Error shuffling playlist:", error);
       showAlert("Failed to shuffle playlist. Please try again.", "error");
@@ -189,8 +193,6 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("login-section").innerText =
       "Ready to Shuffle or Remove Duplicates";
   };
-
-
 
   const createBackupPlaylist = async (originalPlaylistId) => {
     try {
@@ -218,20 +220,15 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   const unFollowBackupPlaylist = async (backupPlaylistId) => {
-    try {
-      await fetch(
-        `https://api.spotify.com/v1/playlists/${backupPlaylistId}/followers`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
-    } catch (error) {
-      console.error("Error unfollowing backup playlist:", error);
-      alert("Failed to unfollow backup playlist. Need to manually unfollow.");
-    }
+    await fetch(
+      `https://api.spotify.com/v1/playlists/${backupPlaylistId}/followers`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
   };
 
   const removeDuplicates = async (playlistId, removedDuplicatesDiv) => {
